@@ -29,9 +29,10 @@ public class Client implements Runnable {
 
 			while (true) {
 				input = serverInput.readLine();
+				if (input != null)
 				System.out.println(input);
 
-				if (input.startsWith(">>> Dovidjenja ")) {
+				if (input==null) {
 					break;
 				}
 
