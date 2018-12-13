@@ -1,9 +1,12 @@
 package server;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.LinkedList;
 
@@ -120,7 +123,7 @@ public class ClientHandler extends Thread {
 							postoji = false;
 							continue;
 						}
-						clientOutput.println("DOSAOaaa");
+						//clientOutput.println("DOSAOaaa");
 						clientOutput.println("Unesite lozinku: ");
 						String pass = unos();
 					
@@ -129,9 +132,22 @@ public class ClientHandler extends Thread {
 							pass = unos();
 						}
 
-						valid = true;
+						validUser = true;
 						Korisnik e = new Korisnik(user, pass);
 						korisnici.addLast(e);
+						
+						try(FileWriter fw = new FileWriter("data/log.txt", true);
+							    BufferedWriter bw = new BufferedWriter(fw);
+							    PrintWriter out = new PrintWriter(bw))
+							{
+							    out.println(e.getUsername());
+							    //more code
+							    out.println(e.getPassword());
+							    //more code
+							    out.println("\n----------");
+							} catch (IOException e1) {
+							    //exception handling left as an exercise for the reader
+							}
 					}
 					break;
 				case 2:
@@ -146,7 +162,7 @@ public class ClientHandler extends Thread {
 
 			} while (!valid);
 
-			String msg;
+			
 
 			// ------------------------------------------------------------------------------------//
 
@@ -204,6 +220,9 @@ public class ClientHandler extends Thread {
 				}
 			}
 
+			
+			
+			
 			Server.onlineUsers.remove(this);
 			socket.close();
 
