@@ -91,6 +91,7 @@ public class ClientHandler extends Thread {
 					clientOutput.println("Niste uneli izbor lepo. ");
 					Server.onlineUsers.remove(this);
 					socket.close();
+					break;
 					
 				}
 
@@ -99,11 +100,11 @@ public class ClientHandler extends Thread {
 					boolean validUser = false;
 					boolean postoji = false;
 
-					clientOutput.println("Unesite korisnicko ime za novog korisnika: ");
+					
 					while (!validUser) {
-						String user = clientInput.readLine();
-						if (user == null)
-							continue;
+						clientOutput.println("Unesite korisnicko ime za novog korisnika: ");
+						String user = unos();
+						
 
 						for (int i = 0; i < korisnici.size(); i++) {
 							if (korisnici.get(i).getUsername().equals(user)) {
@@ -115,15 +116,17 @@ public class ClientHandler extends Thread {
 							
 						}
 						if (postoji) {
-							clientOutput.println("DOSLO");
+//							clientOutput.println("DOSAO");
+							postoji = false;
 							continue;
 						}
+						clientOutput.println("DOSAOaaa");
 						clientOutput.println("Unesite lozinku: ");
-						String pass = clientInput.readLine();
-						if (pass == null) break;
-						while (!checkString(pass) || pass.length() < 8) {
+						String pass = unos();
+					
+						while (pass == null || !checkString(pass) || pass.length() < 8) {
 							clientOutput.println("Lozinka nije dobra, unesite novu: ");
-							pass = clientInput.readLine();
+							pass = unos();
 						}
 
 						valid = true;
@@ -150,7 +153,7 @@ public class ClientHandler extends Thread {
 			while (true) {
 
 				clientOutput.println("Za sabiranje unesite 1, za oduzimanje unesite 2");
-				String izborString = clientInput.readLine();
+				String izborString = unos();
 				if (izborString == null || izborString.startsWith("***quit")) {
 					break;
 				}
