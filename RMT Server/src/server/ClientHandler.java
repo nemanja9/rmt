@@ -2,6 +2,8 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,10 +22,42 @@ public class ClientHandler extends Thread {
 	public static LinkedList<Korisnik> korisnici = new LinkedList<Korisnik>();
 
 	public void dodaj() {
+
 		Korisnik e = new Korisnik("username", "eEe123456789");
 
 		korisnici.add(e);
 
+		try (BufferedReader br = new BufferedReader(new FileReader("data/log.txt"))) {
+			String line;
+			int i = 1;
+			String user = "";
+			String pass = "";
+
+			while ((line = br.readLine()) != null) {
+				if (i == 0 || i % 2 != 0) {
+					user = line;
+					
+				} else
+					pass = line;
+				if (i > 1 && i % 2 == 0) {
+
+					e.setUsername(user);
+					e.setPassword(pass);
+					korisnici.add(e);
+					clientOutput.println(e.getUsername());
+					clientOutput.println(e.getPassword());
+				}
+
+				i++;
+			}
+			clientOutput.println("ima ih " + korisnici.size());
+		} catch (FileNotFoundException e1) {
+			
+			e1.printStackTrace();
+		} catch (IOException e1) {
+		
+			e1.printStackTrace();
+		}
 	}
 
 	private static boolean checkString(String str) {
@@ -47,7 +81,7 @@ public class ClientHandler extends Thread {
 		return false;
 	}
 
-	private String unos () {
+	private String unos() {
 		String ulaz = "";
 		try {
 			ulaz = clientInput.readLine();
@@ -61,7 +95,7 @@ public class ClientHandler extends Thread {
 		}
 		return null;
 	}
-	
+
 	public ClientHandler(Socket socketForCom) {
 		socket = socketForCom;
 
@@ -70,10 +104,11 @@ public class ClientHandler extends Thread {
 	public void run() {
 
 		try {
-			dodaj(); // unosimo rucno jednog korisnika radi testiranja
+
 			clientInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			clientOutput = new PrintStream(socket.getOutputStream());
-
+			
+			dodaj(); // unosimo rucno jednog korisnika radi testiranja
 			boolean valid = false;
 
 			do {
@@ -83,9 +118,8 @@ public class ClientHandler extends Thread {
 				clientOutput.println("Za logovanje na postojeci nalog izaberite opciju 2, ");
 				clientOutput.println("Za nastavak bez registracije izaberite opciju 3. ");
 
-
 				String izborRegStr = unos();
-			
+
 				int izborReg = 0;
 				try {
 					izborReg = Integer.parseInt(izborRegStr);
@@ -95,7 +129,7 @@ public class ClientHandler extends Thread {
 					Server.onlineUsers.remove(this);
 					socket.close();
 					break;
-					
+
 				}
 
 				switch (izborReg) {
@@ -103,11 +137,9 @@ public class ClientHandler extends Thread {
 					boolean validUser = false;
 					boolean postoji = false;
 
-					
 					while (!validUser) {
 						clientOutput.println("Unesite korisnicko ime za novog korisnika: ");
 						String user = unos();
-						
 
 						for (int i = 0; i < korisnici.size(); i++) {
 							if (korisnici.get(i).getUsername().equals(user)) {
@@ -116,17 +148,17 @@ public class ClientHandler extends Thread {
 								postoji = true;
 								break;
 							}
-							
+
 						}
 						if (postoji) {
-//							clientOutput.println("DOSAO");
+							// clientOutput.println("DOSAO");
 							postoji = false;
 							continue;
 						}
-						//clientOutput.println("DOSAOaaa");
+						// clientOutput.println("DOSAOaaa");
 						clientOutput.println("Unesite lozinku: ");
 						String pass = unos();
-					
+
 						while (pass == null || !checkString(pass) || pass.length() < 8) {
 							clientOutput.println("Lozinka nije dobra, unesite novu: ");
 							pass = unos();
@@ -135,24 +167,46 @@ public class ClientHandler extends Thread {
 						validUser = true;
 						Korisnik e = new Korisnik(user, pass);
 						korisnici.addLast(e);
-						
-						try(FileWriter fw = new FileWriter("data/log.txt", true);
-							    BufferedWriter bw = new BufferedWriter(fw);
-							    PrintWriter out = new PrintWriter(bw))
-							{
-							    out.println(e.getUsername());
-							    //more code
-							    out.println(e.getPassword());
-							    //more code
-							    out.println("\n----------");
-							} catch (IOException e1) {
-							    //exception handling left as an exercise for the reader
-							}
+
+						try (FileWriter fw = new FileWriter("data/log.txt", true);
+								BufferedWriter bw = new BufferedWriter(fw);
+								PrintWriter out = new PrintWriter(bw)) {
+							out.println(e.getUsername());
+							out.println(e.getPassword());
+						} catch (IOException e1) {
+							
+						}
 					}
 					break;
 				case 2:
-				
+					clientOutput.println("Unesite vas username: ");
+					String usernn = unos();
 					
+					boolean postojiNalog = false;
+					for (int i = 0; i < korisnici.size(); i++) {
+						if(korisnici.get(i).getUsername().contains(usernn)) {
+							clientOutput.println("Korisnicko ime pronadjeno. Unesite sifru: ");
+							postojiNalog = true;
+							boolean validPass = false;
+							while (!validPass) {
+								String passs = unos();
+								if (passs.equals(korisnici.get(i).getPassword())) {
+									validPass = true;
+									clientOutput.println("Lozinka upsesno unesena.");
+									break;
+								}
+								
+								else clientOutput.println("Lozinka netacna, pokusajte ponovo.");
+							}
+							if (validPass) break;
+						}
+					}
+					if (!postojiNalog) {
+						clientOutput.println("Uneti username ne postoji medju registrovanim korisnicima. Nastavljate kao gost. ");
+					}
+					
+					break;
+
 				}
 				clientOutput.println("Unesite korisnicko ime: ");
 				username = clientInput.readLine();
@@ -161,8 +215,6 @@ public class ClientHandler extends Thread {
 				clientOutput.println(">>> Dobrodosao " + username + "\nZa izlazak unesite ***quit");
 
 			} while (!valid);
-
-			
 
 			// ------------------------------------------------------------------------------------//
 
@@ -220,9 +272,6 @@ public class ClientHandler extends Thread {
 				}
 			}
 
-			
-			
-			
 			Server.onlineUsers.remove(this);
 			socket.close();
 
