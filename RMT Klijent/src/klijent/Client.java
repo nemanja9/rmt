@@ -29,10 +29,11 @@ public class Client implements Runnable {
 
 			while (true) {
 				input = serverInput.readLine();
-				if (input != null)
-				System.out.println(input);
-
-				if (input==null) {
+				
+				if (input != null ) {
+					System.out.println(input);
+				}
+				if (input == null) {
 					break;
 				}
 
@@ -58,7 +59,7 @@ public class Client implements Runnable {
 				msg = konzola.readLine();
 				serverOutput.println(msg);
 
-				if (msg.startsWith("***quit")) {
+				if (msg.startsWith("***quit") ) {
 					break;
 				}
 			}

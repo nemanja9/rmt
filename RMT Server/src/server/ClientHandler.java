@@ -21,28 +21,28 @@ public class ClientHandler extends Thread {
 
 	public static LinkedList<Korisnik> korisnici = new LinkedList<Korisnik>();
 
+	public boolean registrovan = false;
+
 	public void dodaj() {
-
-		Korisnik e = new Korisnik("username", "eEe123456789");
-
-		korisnici.add(e);
 
 		try (BufferedReader br = new BufferedReader(new FileReader("data/log.txt"))) {
 			String line;
-			int i = 1;
+			int i = 0;
 			String user = "";
 			String pass = "";
 
 			while ((line = br.readLine()) != null) {
 				if (i == 0 || i % 2 != 0) {
 					user = line;
-					
-				} else
-					pass = line;
-				if (i > 1 && i % 2 == 0) {
 
-					e.setUsername(user);
-					e.setPassword(pass);
+				} else {
+					pass = line;
+				}
+				
+				if (i > 0 && i % 2 == 0) {
+					
+					Korisnik e = new Korisnik(user, pass);
+					
 					korisnici.add(e);
 					clientOutput.println(e.getUsername());
 					clientOutput.println(e.getPassword());
@@ -52,10 +52,10 @@ public class ClientHandler extends Thread {
 			}
 			clientOutput.println("ima ih " + korisnici.size());
 		} catch (FileNotFoundException e1) {
-			
+
 			e1.printStackTrace();
 		} catch (IOException e1) {
-		
+
 			e1.printStackTrace();
 		}
 	}
@@ -101,14 +101,18 @@ public class ClientHandler extends Thread {
 
 	}
 
+	private void racuna() {
+		
+	}
+	
 	public void run() {
 
 		try {
 
 			clientInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			clientOutput = new PrintStream(socket.getOutputStream());
-			
-			dodaj(); // unosimo rucno jednog korisnika radi testiranja
+
+			//dodaj(); // unosimo rucno jednog korisnika radi testiranja
 			boolean valid = false;
 
 			do {
@@ -167,24 +171,24 @@ public class ClientHandler extends Thread {
 						validUser = true;
 						Korisnik e = new Korisnik(user, pass);
 						korisnici.addLast(e);
-
+						registrovan = true;
 						try (FileWriter fw = new FileWriter("data/log.txt", true);
 								BufferedWriter bw = new BufferedWriter(fw);
 								PrintWriter out = new PrintWriter(bw)) {
 							out.println(e.getUsername());
 							out.println(e.getPassword());
 						} catch (IOException e1) {
-							
+
 						}
 					}
 					break;
 				case 2:
 					clientOutput.println("Unesite vas username: ");
 					String usernn = unos();
-					
+
 					boolean postojiNalog = false;
 					for (int i = 0; i < korisnici.size(); i++) {
-						if(korisnici.get(i).getUsername().contains(usernn)) {
+						if (korisnici.get(i).getUsername().contains(usernn)) {
 							clientOutput.println("Korisnicko ime pronadjeno. Unesite sifru: ");
 							postojiNalog = true;
 							boolean validPass = false;
@@ -195,16 +199,22 @@ public class ClientHandler extends Thread {
 									clientOutput.println("Lozinka upsesno unesena.");
 									break;
 								}
-								
-								else clientOutput.println("Lozinka netacna, pokusajte ponovo.");
+
+								else
+									clientOutput.println("Lozinka netacna, pokusajte ponovo.");
 							}
-							if (validPass) break;
+							if (validPass) {
+								registrovan = true;
+								break;
+							}
 						}
 					}
 					if (!postojiNalog) {
-						clientOutput.println("Uneti username ne postoji medju registrovanim korisnicima. Nastavljate kao gost. ");
+						clientOutput.println(
+								"Uneti username ne postoji medju registrovanim korisnicima. Nastavljate kao gost. ");
+						registrovan = false;
 					}
-					
+
 					break;
 
 				}
@@ -218,58 +228,119 @@ public class ClientHandler extends Thread {
 
 			// ------------------------------------------------------------------------------------//
 
-			while (true) {
-
-				clientOutput.println("Za sabiranje unesite 1, za oduzimanje unesite 2");
-				String izborString = unos();
-				if (izborString == null || izborString.startsWith("***quit")) {
-					break;
-				}
-
-				int izbor = 0;
-				try {
-					izbor = Integer.parseInt(izborString);
-				} catch (NumberFormatException e1) {
-
-					clientOutput.println("Niste uneli izbor lepo. Unesite ponovo. ");
-				}
-
-				switch (izbor) {
-				case 1:
-					clientOutput.println("Izabrali ste zbir. Unesite izraz u obliku X+Y: ");
-					String input = clientInput.readLine();
-					String[] niz = input.split("\\+");
-
-					clientOutput.println("Zbir je: ");
-
-					try {
-						clientOutput.println(Integer.parseInt(niz[0]) + Integer.parseInt(niz[1]));
-					} catch (Exception e) {
-						clientOutput.println("Niste lepo uneli");
-
+			if (registrovan) {
+				while (true) {
+					clientOutput.println("Za sabiranje unesite 1, za oduzimanje unesite 2");
+					String izborString = unos();
+					if (izborString == null || izborString.startsWith("***quit")) {
+						break;
 					}
 
-					break;
-				case 2:
-					clientOutput.println("Izabrali ste razliku. Unesite izraz u obliku X-Y: ");
-					String input1 = clientInput.readLine();
-					String[] niz1 = input1.split("\\-");
-
-					clientOutput.println("Razlika je: ");
-
+					int izbor = 0;
 					try {
-						clientOutput.println(Integer.parseInt(niz1[0]) - Integer.parseInt(niz1[1]));
-					} catch (Exception e) {
-						clientOutput.println("Niste lepo uneli");
+						izbor = Integer.parseInt(izborString);
+					} catch (NumberFormatException e1) {
 
+						clientOutput.println("Niste uneli izbor lepo. Unesite ponovo. ");
 					}
 
-					break;
+					switch (izbor) {
+					case 1:
+						clientOutput.println("Izabrali ste zbir. Unesite izraz u obliku X+Y: ");
+						String input = clientInput.readLine();
+						String[] niz = input.split("\\+");
 
-				default:
-					clientOutput.println("Niste uneli ni jednu od opcija. ");
-					break;
+						clientOutput.println("Zbir je: ");
+
+						try {
+							clientOutput.println(Integer.parseInt(niz[0]) + Integer.parseInt(niz[1]));
+						} catch (Exception e) {
+							clientOutput.println("Niste lepo uneli");
+
+						}
+
+						break;
+					case 2:
+						clientOutput.println("Izabrali ste razliku. Unesite izraz u obliku X-Y: ");
+						String input1 = clientInput.readLine();
+						String[] niz1 = input1.split("\\-");
+
+						clientOutput.println("Razlika je: ");
+
+						try {
+							clientOutput.println(Integer.parseInt(niz1[0]) - Integer.parseInt(niz1[1]));
+						} catch (Exception e) {
+							clientOutput.println("Niste lepo uneli");
+
+						}
+
+						break;
+
+					default:
+						clientOutput.println("Niste uneli ni jednu od opcija. ");
+						break;
+					}
 				}
+			} else {
+				int brojac = 0;
+				clientOutput.println("Niste registrovani, imate pravo na 3 kalkulacije:");
+				while (brojac < 3) {
+					clientOutput.println("Za sabiranje unesite 1, za oduzimanje unesite 2");
+					String izborString = unos();
+					if (izborString == null || izborString.startsWith("***quit")) {
+						break;
+					}
+
+					int izbor = 0;
+					try {
+						izbor = Integer.parseInt(izborString);
+					} catch (NumberFormatException e1) {
+
+						clientOutput.println("Niste uneli izbor lepo. Unesite ponovo. ");
+					}
+
+					switch (izbor) {
+					case 1:
+						clientOutput.println("Izabrali ste zbir. Unesite izraz u obliku X+Y: ");
+						String input = clientInput.readLine();
+						String[] niz = input.split("\\+");
+
+						clientOutput.println("Zbir je: ");
+
+						try {
+							clientOutput.println(Integer.parseInt(niz[0]) + Integer.parseInt(niz[1]));
+						} catch (Exception e) {
+							clientOutput.println("Niste lepo uneli");
+
+						}
+
+						break;
+					case 2:
+						clientOutput.println("Izabrali ste razliku. Unesite izraz u obliku X-Y: ");
+						String input1 = clientInput.readLine();
+						String[] niz1 = input1.split("\\-");
+
+						clientOutput.println("Razlika je: ");
+
+						try {
+							clientOutput.println(Integer.parseInt(niz1[0]) - Integer.parseInt(niz1[1]));
+						} catch (Exception e) {
+							clientOutput.println("Niste lepo uneli");
+
+						}
+
+						break;
+
+					default:
+						clientOutput.println("Niste uneli ni jednu od opcija. ");
+						break;
+					}
+					brojac++;
+
+				}
+
+				clientOutput.println(">>> Iskoristili ste 3 kalkulacije.Pay bitch!");
+
 			}
 
 			Server.onlineUsers.remove(this);
